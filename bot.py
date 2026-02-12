@@ -33,9 +33,9 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     result = await AGENT.ainvoke(
         {"messages": [{"role": "user", "content": update.message.text}]},
-        config={"configurable": {"thread_id": update.effective_chat.id, "user_id": update.effective_user.id, "user_name": update.effective_user.first_name}},
+        config={"configurable": {"thread_id": str(update.effective_chat.id), "assistant_id": str(update.effective_user.id), "user_name": update.effective_user.first_name}},
     )
-    # logger.info(result)
+    logger.info(result)
     response_text = str(result["structured_response"]["response"])
     converted = telegramify_markdown.markdownify(
         response_text,
@@ -61,18 +61,42 @@ async def main():
     global AGENT
     async with AsyncPostgresStore.from_conn_string(c.CONNECTION_STRING) as store:
         await store.setup()
+
         AGENT = create_agent(store)
         logger.info("Agent started")
+
         application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-        echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
 
-        start_handler = CommandHandler("start", start)
-        hello_handler = CommandHandler("hello", hello)
-        application.add_handler(start_handler)
-        application.add_handler(hello_handler)
-        application.add_handler(echo_handler)
-        application.run_polling()
+        # Handlers
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("hello", hello))
+        application.add_handler(
+            MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
+        )
 
+        try:
+            # ---- START ----
+            await application.initialize()
+            await application.start()
+            await application.updater.start_polling()
+
+            logger.info("Telegram bot started")
+
+            # Keep running forever
+            await asyncio.Event().wait()
+
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            logger.info("Shutdown signal received")
+
+        finally:
+            # ---- CLEANUP (VERY IMPORTANT) ----
+            logger.info("Stopping Telegram bot...")
+
+            await application.updater.stop()
+            await application.stop()
+            await application.shutdown()
+
+            logger.info("Telegram bot stopped cleanly")
 
 if __name__ == "__main__":
     logger.add("logs/bot_{time}.log", rotation="10 MB", retention="10 days")

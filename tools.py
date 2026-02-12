@@ -124,7 +124,7 @@ async def count_all_incidents(
         }
         
         try:
-            response = requests.get(url, params=params, timeout=30)
+            response = requests.get(url, params=params, timeout=120)
             response.raise_for_status()
             results = response.json()
             #print("Parrams",params)
@@ -219,13 +219,13 @@ async def get_incidents_by_category(
     
     Args:
         query (str): Search query string
-        limit (int): Number of results to return (default: 3)
+        limit (int): Number of results to return, use only if you need to limit the number of results, otherwise use 100000
         category (Optional[str]): Filter by specific category
         sub_category (Optional[str]): Filter by specific sub-category
         start_date (Optional[str]): Filter from this date (format: YYYY-MM-DD)
         end_date (Optional[str]): Filter until this date (format: YYYY-MM-DD)
         generated_category (Optional[str]): Filter by generated category name
-        tag (str): Tag value to filter incidents by horizon or other product names
+        tag (str): Tag value to filter incidents by horizon, avd, ws1, citrix or all
     Returns:
         dict: Structured response containing:
             - category_name: The category name (from generated_category parameter)
@@ -290,7 +290,7 @@ async def get_incidents_by_category(
         #print("End date", params["end_date"])
     try:
         #print("Params from get_incidents_by_category", params)
-        response = requests.get(url, params=params, timeout=30)
+        response = requests.get(url, params=params, timeout=120)
         response.raise_for_status()
         incidents = response.json()
         #print("Response from get_incidents_by_category", incidents)

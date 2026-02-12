@@ -21,8 +21,7 @@ async def main():
 
             result = await agent.ainvoke(
                 {"messages": [{"role": "user", "content": user_input}]},
-                config={"configurable": {"thread_id": "123451", "user_id": "123452"}},
-                context={"user_id": "123452"},
+                config={"configurable": {"thread_id": "123456", "assistant_id": "123451"}},
             )
             logger.info(f"Agent response: {result}")
             print(result["structured_response"]["response"])
